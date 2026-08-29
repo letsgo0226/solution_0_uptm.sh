@@ -1,0 +1,32 @@
+name: verify
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Verify UPTM one-liner
+        run: |
+          test "$(wc -c < solution_0_uptm.sh)" -le 2048
+          ! grep -Eq 'QV|semantic attractor|keyword|quantum' solution_0_uptm.sh
+          printf 'All particles as Turing field\n16\n64\n' | sh solution_0_uptm.sh > /tmp/uptm.out
+          test -s solution_0_uptm.body
+          python3 - <<'PY'
+          import json
+          d=json.load(open("solution_0_uptm.clcert"))
+          b=d["B0"]
+          assert d["P"]=="solution_0_uptm.sh"
+          assert d["OP"]==d["FIX"]==d["ABS"]==d["PCC"]==d["ZE"]==1
+          assert d["BUG"]==0
+          assert b["RUN"]=="BODY=Run(SELF,Q,N,B)"
+          assert b["SELF"][0]==1 and b["SELF"][1]>0
+          assert b["BODY"][0]==1 and b["BODY"][1]>0
+          assert b["TR"][2][1]==1
+          PY
